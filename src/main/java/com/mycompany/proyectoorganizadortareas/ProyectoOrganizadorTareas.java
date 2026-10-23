@@ -1,88 +1,69 @@
-
 package com.mycompany.proyectoorganizadortareas;
 
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
+/**
+ * Clase principal del organizador de tareas académicas.
+ * Maneja el menú y la interacción con el usuario.
+ */
 public class ProyectoOrganizadorTareas {
 
-    static GestorMaterias gestorMaterias = new GestorMaterias();
-    static GestorTareas gestorTareas = new GestorTareas();
+    private static final Organizador organizador =
+            new Organizador();
 
     public static void main(String[] args) {
 
-        int opcion = 0;
+        while (true) {
 
-        while (opcion != 10) {
+            String menu =
+                "ORGANIZADOR DE TAREAS ACADÉMICAS\n\n"
+                + "1. Registrar materia\n"
+                + "2. Consultar materias\n"
+                + "3. Registrar tarea\n"
+                + "4. Consultar tareas\n"
+                + "5. Modificar tarea\n"
+                + "6. Eliminar tarea\n"
+                + "7. Cambiar estado\n"
+                + "8. Filtrar tareas\n"
+                + "9. Ordenar tareas\n"
+                + "10. Salir\n\n"
+                + "Seleccione una opción:";
 
-            String menu = "ORGANIZADOR DE TAREAS ACADEMICAS\n\n"
-                    + "1. Registrar materia\n"
-                    + "2. Consultar materias\n"
-                    + "3. Registrar tarea\n"
-                    + "4. Consultar tareas\n"
-                    + "5. Modificar tarea\n"
-                    + "6. Eliminar tarea\n"
-                    + "7. Cambiar estado\n"
-                    + "8. Filtrar tareas\n"
-                    + "9. Ordenar tareas\n"
-                    + "10. Salir\n\n"
-                    + "Digite una opcion:";
+            Integer opcion = pedirNumero(menu);
 
-            Integer numero = pedirNumero(menu);
-            if (numero == null) {
-                break;
+            if (opcion == null || opcion == 10) {
+                mensaje("Hasta luego.");
+                return;
             }
 
-            opcion = numero;
-
             switch (opcion) {
-                case 1:
-                    registrarMateria();
-                    break;
-                case 2:
-                    consultarMaterias();
-                    break;
-                case 3:
-                    registrarTarea();
-                    break;
-                case 4:
-                    mostrarTareas(gestorTareas.consultarTareas());
-                    break;
-                case 5:
-                    modificarTarea();
-                    break;
-                case 6:
-                    eliminarTarea();
-                    break;
-                case 7:
-                    cambiarEstado();
-                    break;
-                case 8:
-                    filtrarTareas();
-                    break;
-                case 9:
-                    ordenarTareas();
-                    break;
-                case 10:
-                    JOptionPane.showMessageDialog(null, "Hasta luego.");
-                    break;
-                default:
-                    mensaje("Opcion incorrecta.");
+                case 1 -> registrarMateria();
+                case 2 -> consultarMaterias();
+                case 3 -> registrarTarea();
+                case 4 -> mostrarTareas(
+                    organizador.consultarTareas());
+                case 5 -> modificarTarea();
+                case 6 -> eliminarTarea();
+                case 7 -> cambiarEstado();
+                case 8 -> filtrarTareas();
+                case 9 -> ordenarTareas();
+                default -> mensaje("Opción incorrecta.");
             }
         }
     }
 
-    // METODOS AUXILIARES
+    // Métodos auxiliares para capturar y mostrar información.
 
-    public static void mensaje(String texto) {
+    private static void mensaje(String texto) {
         JOptionPane.showMessageDialog(null, texto);
     }
 
-    public static String pedirTexto(String pregunta) {
+    private static String pedirTexto(String pregunta) {
 
         String texto = JOptionPane.showInputDialog(pregunta);
 
@@ -90,15 +71,15 @@ public class ProyectoOrganizadorTareas {
             return null;
         }
 
-        if (texto.trim().isEmpty()) {
-            mensaje("Debe ingresar un dato.");
+        if (texto.isBlank()) {
+            mensaje("El dato es obligatorio.");
             return null;
         }
 
         return texto.trim();
     }
 
-    public static Integer pedirNumero(String pregunta) {
+    private static Integer pedirNumero(String pregunta) {
 
         String texto = JOptionPane.showInputDialog(pregunta);
 
@@ -107,17 +88,17 @@ public class ProyectoOrganizadorTareas {
         }
 
         try {
-            return Integer.parseInt(texto.trim());
+            return Integer.valueOf(texto.trim());
         } catch (NumberFormatException e) {
-            mensaje("Debe ingresar un numero valido.");
+            mensaje("Ingrese un número válido.");
             return null;
         }
     }
 
-    public static LocalDate pedirFecha() {
+    private static LocalDate pedirFecha() {
 
         String texto = pedirTexto(
-                "Fecha de entrega (AAAA-MM-DD):");
+            "Fecha de entrega (AAAA-MM-DD):");
 
         if (texto == null) {
             return null;
@@ -126,67 +107,72 @@ public class ProyectoOrganizadorTareas {
         try {
             return LocalDate.parse(texto);
         } catch (DateTimeParseException e) {
-            mensaje("La fecha no es valida.");
+            mensaje("Fecha incorrecta.");
             return null;
         }
     }
 
-    public static String seleccionar(String titulo, String[] opciones) {
+    private static <T> T seleccionar(
+            String titulo, T[] opciones) {
 
-        return (String) JOptionPane.showInputDialog(
-                null,
-                "Seleccione una opcion:",
-                titulo,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                opciones,
-                opciones[0]);
+        if (opciones.length == 0) {
+            return null;
+        }
+
+        int indice = JOptionPane.showOptionDialog(
+            null,
+            "Seleccione una opción:",
+            titulo,
+            JOptionPane.DEFAULT_OPTION,
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            opciones,
+            opciones[0]
+        );
+
+        return indice < 0 ? null : opciones[indice];
     }
 
-    public static Materia seleccionarMateria() {
+    private static Materia seleccionarMateria() {
 
-        List<Materia> materias = gestorMaterias.consultarMaterias();
+        List<Materia> materias =
+            organizador.consultarMaterias();
 
         if (materias.isEmpty()) {
             mensaje("Primero debe registrar una materia.");
             return null;
         }
 
-        Materia[] opciones = materias.toArray(new Materia[0]);
-
-        return (Materia) JOptionPane.showInputDialog(
-                null,
-                "Seleccione la materia:",
-                "Materias",
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                opciones,
-                opciones[0]);
+        return seleccionar(
+            "Materias", materias.toArray(new Materia[0]));
     }
 
-    public static Tarea seleccionarTarea() {
+    private static Tarea seleccionarTarea() {
 
-        List<Tarea> tareas = gestorTareas.consultarTareas();
+        List<Tarea> tareas = organizador.consultarTareas();
 
         if (tareas.isEmpty()) {
-            mensaje("No existen tareas registradas.");
+            mensaje("No hay tareas registradas.");
             return null;
         }
 
-        String lista = "TAREAS REGISTRADAS\n\n";
+        StringBuilder listado = new StringBuilder();
 
         for (Tarea tarea : tareas) {
-            lista += tarea.getId() + " - "
-                    + tarea.getTitulo() + "\n";
+            listado.append(tarea.getId())
+                   .append(" - ")
+                   .append(tarea.getTitulo())
+                   .append("\n");
         }
 
-        Integer id = pedirNumero(lista + "\nDigite el ID:");
+        Integer id = pedirNumero(
+            listado + "\nDigite el ID de la tarea:");
 
         if (id == null) {
             return null;
         }
 
-        Tarea tarea = gestorTareas.buscarTarea(id);
+        Tarea tarea = organizador.buscarTarea(id);
 
         if (tarea == null) {
             mensaje("La tarea no existe.");
@@ -195,185 +181,193 @@ public class ProyectoOrganizadorTareas {
         return tarea;
     }
 
-    // REGISTRAR MATERIA
+    private static void mostrarTexto(
+            String titulo, String contenido) {
 
-    public static void registrarMateria() {
+        JTextArea area = new JTextArea(contenido, 18, 45);
+        area.setEditable(false);
+        area.setCaretPosition(0);
 
-        String nombre = pedirTexto("Nombre de la materia:");
-
-        if (nombre == null) {
-            return;
-        }
-
-        boolean resultado = gestorMaterias.registrarMateria(nombre);
-
-        if (resultado) {
-            mensaje("Materia registrada correctamente.");
-        } else {
-            mensaje("La materia ya existe o el nombre no es valido.");
-        }
+        JOptionPane.showMessageDialog(
+            null,
+            new JScrollPane(area),
+            titulo,
+            JOptionPane.INFORMATION_MESSAGE
+        );
     }
 
-    // CONSULTAR MATERIAS
-
-    public static void consultarMaterias() {
-
-        List<Materia> materias = gestorMaterias.consultarMaterias();
-
-        if (materias.isEmpty()) {
-            mensaje("No hay materias registradas.");
-            return;
-        }
-
-        String lista = "MATERIAS REGISTRADAS\n\n";
-
-        for (Materia materia : materias) {
-            lista += materia.toString() + "\n";
-        }
-
-        mostrarTexto("Materias", lista);
-    }
-
-    // REGISTRAR TAREA
-
-    public static void registrarTarea() {
-
-        if (gestorMaterias.consultarMaterias().isEmpty()) {
-            mensaje("Primero debe registrar una materia.");
-            return;
-        }
-
-        String titulo = pedirTexto("Titulo de la tarea:");
-        if (titulo == null) return;
-
-        String descripcion = pedirTexto("Descripcion:");
-        if (descripcion == null) return;
-
-        Materia materia = seleccionarMateria();
-        if (materia == null) return;
-
-        String prioridad = seleccionar("Prioridad",
-                new String[]{"Alta", "Media", "Baja"});
-        if (prioridad == null) return;
-
-        LocalDate fecha = pedirFecha();
-        if (fecha == null) return;
-
-        gestorTareas.registrarTarea(
-                titulo, descripcion, materia, prioridad, fecha);
-
-        mensaje("Tarea registrada correctamente.");
-    }
-
-    // MOSTRAR TAREAS
-
-    public static void mostrarTareas(List<Tarea> tareas) {
+    private static void mostrarTareas(List<Tarea> tareas) {
 
         if (tareas.isEmpty()) {
             mensaje("No hay tareas para mostrar.");
             return;
         }
 
-        String lista = "TAREAS ACADEMICAS\n\n";
+        StringBuilder texto = new StringBuilder(
+            "TAREAS ACADÉMICAS\n\n");
 
         for (Tarea tarea : tareas) {
-            lista += tarea.toString()
-                    + "\n-------------------------\n";
+            texto.append(tarea)
+                 .append("\n----------------------\n");
         }
 
-        mostrarTexto("Consulta de tareas", lista);
+        mostrarTexto("Consulta de tareas", texto.toString());
     }
 
-    public static void mostrarTexto(String titulo, String texto) {
+    // Registro y consulta de materias.
 
-        JTextArea area = new JTextArea(texto, 15, 40);
-        area.setEditable(false);
-        area.setCaretPosition(0);
+    private static void registrarMateria() {
 
-        JOptionPane.showMessageDialog(
-                null,
-                new JScrollPane(area),
-                titulo,
-                JOptionPane.INFORMATION_MESSAGE);
+        String nombre = pedirTexto("Nombre de la materia:");
+        if (nombre == null) return;
+
+        boolean registrado =
+            organizador.registrarMateria(nombre);
+
+        mensaje(registrado
+            ? "Materia registrada correctamente."
+            : "La materia ya existe o el nombre es inválido.");
     }
 
-    // MODIFICAR TAREA
+    private static void consultarMaterias() {
 
-    public static void modificarTarea() {
+        List<Materia> materias =
+            organizador.consultarMaterias();
 
-        Tarea tarea = seleccionarTarea();
-        if (tarea == null) return;
+        if (materias.isEmpty()) {
+            mensaje("No hay materias registradas.");
+            return;
+        }
 
-        String titulo = pedirTexto("Nuevo titulo:");
+        StringBuilder texto = new StringBuilder();
+
+        for (Materia materia : materias) {
+            texto.append(materia).append("\n");
+        }
+
+        mostrarTexto("Materias", texto.toString());
+    }
+
+    // Registra una tarea y la asocia con una materia.
+
+    private static void registrarTarea() {
+
+        if (organizador.consultarMaterias().isEmpty()) {
+            mensaje("Primero debe registrar una materia.");
+            return;
+        }
+
+        String titulo = pedirTexto("Título de la tarea:");
         if (titulo == null) return;
 
-        String descripcion = pedirTexto("Nueva descripcion:");
+        String descripcion = pedirTexto("Descripción:");
         if (descripcion == null) return;
 
         Materia materia = seleccionarMateria();
         if (materia == null) return;
 
-        String prioridad = seleccionar("Prioridad",
-                new String[]{"Alta", "Media", "Baja"});
+        Prioridad prioridad = seleccionar(
+            "Prioridad", Prioridad.values());
         if (prioridad == null) return;
 
         LocalDate fecha = pedirFecha();
         if (fecha == null) return;
 
-        boolean resultado = gestorTareas.modificarTarea(
-                tarea.getId(), titulo, descripcion,
-                materia, prioridad, fecha);
+        boolean resultado = organizador.registrarTarea(
+            titulo, descripcion, materia, prioridad, fecha);
 
-        if (resultado) {
-            mensaje("Tarea modificada correctamente.");
-        } else {
-            mensaje("No fue posible modificar la tarea.");
-        }
+        mensaje(resultado
+            ? "Tarea registrada correctamente."
+            : "No fue posible registrar la tarea.");
     }
 
-    // ELIMINAR TAREA
+    // Modifica los datos de una tarea existente.
 
-    public static void eliminarTarea() {
+    private static void modificarTarea() {
 
         Tarea tarea = seleccionarTarea();
         if (tarea == null) return;
 
-        int confirmar = JOptionPane.showConfirmDialog(
-                null,
-                "Desea eliminar la tarea: " + tarea.getTitulo() + "?",
-                "Eliminar tarea",
-                JOptionPane.YES_NO_OPTION);
+        String titulo = pedirTexto("Nuevo título:");
+        if (titulo == null) return;
 
-        if (confirmar == JOptionPane.YES_OPTION) {
+        String descripcion = pedirTexto("Nueva descripción:");
+        if (descripcion == null) return;
 
-            gestorTareas.eliminarTarea(tarea.getId());
-            mensaje("Tarea eliminada correctamente.");
-        }
+        Materia materia = seleccionarMateria();
+        if (materia == null) return;
+
+        Prioridad prioridad = seleccionar(
+            "Prioridad", Prioridad.values());
+        if (prioridad == null) return;
+
+        LocalDate fecha = pedirFecha();
+        if (fecha == null) return;
+
+        boolean resultado = organizador.modificarTarea(
+            tarea.getId(), titulo, descripcion,
+            materia, prioridad, fecha
+        );
+
+        mensaje(resultado
+            ? "Tarea modificada correctamente."
+            : "No fue posible modificar la tarea.");
     }
 
-    // CAMBIAR ESTADO
+    // Elimina una tarea después de confirmar la operación.
 
-    public static void cambiarEstado() {
+    private static void eliminarTarea() {
 
         Tarea tarea = seleccionarTarea();
         if (tarea == null) return;
 
-        String estado = seleccionar("Estado",
-                new String[]{"Pendiente", "En progreso", "Completada"});
+        int respuesta = JOptionPane.showConfirmDialog(
+            null,
+            "¿Desea eliminar " + tarea.getTitulo() + "?",
+            "Eliminar tarea",
+            JOptionPane.YES_NO_OPTION
+        );
+
+        if (respuesta == JOptionPane.YES_OPTION) {
+            boolean resultado =
+                organizador.eliminarTarea(tarea.getId());
+
+            mensaje(resultado
+                ? "Tarea eliminada correctamente."
+                : "No fue posible eliminar la tarea.");
+        }
+    }
+
+    // Actualiza el estado de una tarea.
+
+    private static void cambiarEstado() {
+
+        Tarea tarea = seleccionarTarea();
+        if (tarea == null) return;
+
+        EstadoTarea estado = seleccionar(
+            "Estado de la tarea", EstadoTarea.values());
 
         if (estado == null) return;
 
-        gestorTareas.cambiarEstado(tarea.getId(), estado);
+        boolean resultado = organizador.cambiarEstado(
+            tarea.getId(), estado);
 
-        mensaje("Estado actualizado correctamente.");
+        mensaje(resultado
+            ? "Estado actualizado correctamente."
+            : "No fue posible actualizar el estado.");
     }
 
-    // FILTRAR TAREAS
+    // Permite aplicar filtros individuales o combinados.
 
-    public static void filtrarTareas() {
+    private static void filtrarTareas() {
 
-        String filtro = seleccionar("Filtrar tareas",
-                new String[]{"Materia", "Estado", "Prioridad"});
+        String filtro = seleccionar(
+            "Filtrar tareas",
+            new String[]{
+                "Materia", "Estado", "Prioridad",
+                "Combinar filtros"
+            });
 
         if (filtro == null) return;
 
@@ -381,54 +375,92 @@ public class ProyectoOrganizadorTareas {
 
         switch (filtro) {
 
-            case "Materia":
+            case "Materia" -> {
                 Materia materia = seleccionarMateria();
                 if (materia == null) return;
 
-                resultado = gestorTareas.filtrarPorMateria(
-                        materia.getId());
-                break;
+                resultado = organizador.filtrarPorMateria(materia);
+            }
 
-            case "Estado":
-                String estado = seleccionar("Estado",
-                        new String[]{"Pendiente", "En progreso", "Completada"});
+            case "Estado" -> {
+                EstadoTarea estado = seleccionar(
+                    "Estado", EstadoTarea.values());
                 if (estado == null) return;
 
-                resultado = gestorTareas.filtrarPorEstado(estado);
-                break;
+                resultado = organizador.filtrarPorEstado(estado);
+            }
 
-            case "Prioridad":
-                String prioridad = seleccionar("Prioridad",
-                        new String[]{"Alta", "Media", "Baja"});
+            case "Prioridad" -> {
+                Prioridad prioridad = seleccionar(
+                    "Prioridad", Prioridad.values());
                 if (prioridad == null) return;
 
-                resultado = gestorTareas.filtrarPorPrioridad(prioridad);
-                break;
+                resultado = organizador.filtrarPorPrioridad(prioridad);
+            }
 
-            default:
+            case "Combinar filtros" -> {
+                String[] criterios = {"Todos", "Seleccionar"};
+
+                String usarMateria = seleccionar(
+                    "Filtro de materia", criterios);
+                if (usarMateria == null) return;
+
+                Materia materia = null;
+                if (usarMateria.equals("Seleccionar")) {
+                    materia = seleccionarMateria();
+                    if (materia == null) return;
+                }
+
+                String usarEstado = seleccionar(
+                    "Filtro de estado", criterios);
+                if (usarEstado == null) return;
+
+                EstadoTarea estado = null;
+                if (usarEstado.equals("Seleccionar")) {
+                    estado = seleccionar(
+                        "Estado", EstadoTarea.values());
+                    if (estado == null) return;
+                }
+
+                String usarPrioridad = seleccionar(
+                    "Filtro de prioridad", criterios);
+                if (usarPrioridad == null) return;
+
+                Prioridad prioridad = null;
+                if (usarPrioridad.equals("Seleccionar")) {
+                    prioridad = seleccionar(
+                        "Prioridad", Prioridad.values());
+                    if (prioridad == null) return;
+                }
+
+                resultado = organizador.consultarConFiltros(
+                    estado, materia, prioridad, false);
+            }
+
+            default -> {
                 return;
+            }
         }
 
         mostrarTareas(resultado);
     }
 
-    // ORDENAR TAREAS
+    // Ordena las tareas sin modificar su colección original.
 
-    public static void ordenarTareas() {
+    private static void ordenarTareas() {
 
-        String opcion = seleccionar("Ordenar tareas",
-                new String[]{"Fecha de entrega", "Prioridad"});
+        String opcion = seleccionar(
+            "Ordenar tareas",
+            new String[]{"Fecha de entrega", "Prioridad"});
 
         if (opcion == null) return;
 
         if (opcion.equals("Fecha de entrega")) {
-            mostrarTareas(gestorTareas.ordenarPorFecha());
+            mostrarTareas(organizador.ordenarPorFecha());
         } else {
-            mostrarTareas(gestorTareas.ordenarPorPrioridad());
+            mostrarTareas(organizador.ordenarPorPrioridad());
         }
     }
 }
-
-
 
 

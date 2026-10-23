@@ -1,32 +1,36 @@
 package com.mycompany.proyectoorganizadortareas;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
+/**
+ * Representa una tarea académica con sus datos y estado.
+ */
 public class Tarea {
 
-    private int id;
+    private final int id;
     private String titulo;
     private String descripcion;
-    private Materia materia;
-    private String prioridad;
     private LocalDate fechaEntrega;
-    private String estado;
+    private Prioridad prioridad;
+    private EstadoTarea estado;
+    private Materia materia;
 
-    // Constructor
     public Tarea(int id, String titulo, String descripcion,
-            Materia materia, String prioridad,
+            Materia materia, Prioridad prioridad,
             LocalDate fechaEntrega) {
 
         this.id = id;
-        this.titulo = titulo;
-        this.descripcion = descripcion;
-        this.materia = materia;
-        this.prioridad = prioridad;
-        this.fechaEntrega = fechaEntrega;
-        this.estado = "Pendiente";
+        setTitulo(titulo);
+        setDescripcion(descripcion);
+        setMateria(materia);
+        setPrioridad(prioridad);
+        setFechaEntrega(fechaEntrega);
+
+        // Toda tarea nueva inicia pendiente.
+        this.estado = EstadoTarea.PENDIENTE;
     }
 
-    // Metodos get
     public int getId() {
         return id;
     }
@@ -39,58 +43,65 @@ public class Tarea {
         return descripcion;
     }
 
-    public Materia getMateria() {
-        return materia;
-    }
-
-    public String getPrioridad() {
-        return prioridad;
-    }
-
     public LocalDate getFechaEntrega() {
         return fechaEntrega;
     }
 
-    public String getEstado() {
+    public Prioridad getPrioridad() {
+        return prioridad;
+    }
+
+    public EstadoTarea getEstado() {
         return estado;
     }
 
-    // Metodos set
+    public Materia getMateria() {
+        return materia;
+    }
+
     public void setTitulo(String titulo) {
-        this.titulo = titulo;
+        if (titulo == null || titulo.isBlank()) {
+            throw new IllegalArgumentException(
+                "El título es obligatorio.");
+        }
+        this.titulo = titulo.trim();
     }
 
     public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public void setMateria(Materia materia) {
-        this.materia = materia;
-    }
-
-    public void setPrioridad(String prioridad) {
-        this.prioridad = prioridad;
+        this.descripcion = Objects.requireNonNullElse(
+            descripcion, "").trim();
     }
 
     public void setFechaEntrega(LocalDate fechaEntrega) {
-        this.fechaEntrega = fechaEntrega;
+        this.fechaEntrega = Objects.requireNonNull(
+            fechaEntrega, "La fecha es obligatoria.");
     }
 
-    public void setEstado(String estado) {
-        this.estado = estado;
+    public void setPrioridad(Prioridad prioridad) {
+        this.prioridad = Objects.requireNonNull(
+            prioridad, "La prioridad es obligatoria.");
     }
 
-    // Mostrar informacion de la tarea
+    public void setMateria(Materia materia) {
+        this.materia = Objects.requireNonNull(
+            materia, "La materia es obligatoria.");
+    }
+
+    // Cambia el estado utilizando únicamente valores válidos.
+    public void actualizarEstado(EstadoTarea nuevoEstado) {
+        this.estado = Objects.requireNonNull(
+            nuevoEstado, "El estado no es válido.");
+    }
+
     @Override
     public String toString() {
         return "ID: " + id
-                + "\nTitulo: " + titulo
-                + "\nDescripcion: " + descripcion
-                + "\nMateria: " + materia.getNombre()
-                + "\nPrioridad: " + prioridad
-                + "\nFecha de entrega: " + fechaEntrega
-                + "\nEstado: " + estado;
+            + "\nTítulo: " + titulo
+            + "\nDescripción: " + descripcion
+            + "\nMateria: " + materia.getNombre()
+            + "\nPrioridad: " + prioridad
+            + "\nFecha de entrega: " + fechaEntrega
+            + "\nEstado: " + estado;
     }
 }
-
 
