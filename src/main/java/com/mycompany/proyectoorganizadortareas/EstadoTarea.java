@@ -1,10 +1,14 @@
 package com.mycompany.proyectoorganizadortareas;
 
-/**Representa los estados permitidos para una tarea académica.**/
-
+/** Estados posibles para una tarea académica. */
 public enum EstadoTarea {
-    /** La tarea está pendiente de realizarse. */
-    PENDIENTE,
-    /** La tarea ha sido finalizada. */
-    COMPLETADA
+    PENDIENTE("Pendiente"),
+    COMPLETADA("Completada");
+
+    private final String etiqueta;
+
+    EstadoTarea(String etiqueta) { this.etiqueta = etiqueta; }
+
+    @Override
+    public String toString() { return etiqueta; }
 }

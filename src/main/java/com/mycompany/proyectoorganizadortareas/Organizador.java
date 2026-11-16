@@ -43,6 +43,45 @@ public class Organizador {
         return true;
     }
 
+    // Recupera una materia conservando su ID original.
+    Materia restaurarMateria(int id, String nombre) {
+        if (id <= 0 || buscarMateria(id) != null || nombre == null || nombre.isBlank()
+                || materias.stream().anyMatch(m -> m.getNombre().equalsIgnoreCase(nombre.trim()))) {
+            throw new IllegalArgumentException("Materia guardada no válida");
+        }
+        Materia materia = new Materia(id, nombre);
+        materias.add(materia);
+        siguienteIdMateria = Math.max(siguienteIdMateria, id + 1);
+        return materia;
+    }
+
+    // Recupera una tarea y su estado sin alterar las otras tareas.
+    Tarea restaurarTarea(int id, String titulo, String descripcion, Materia materia,
+            Prioridad prioridad, LocalDate fechaEntrega, EstadoTarea estado) {
+        if (id <= 0 || buscarTarea(id) != null || materia == null || !materias.contains(materia)
+                || estado == null) {
+            throw new IllegalArgumentException("Tarea guardada no válida");
+        }
+        Tarea tarea = new Tarea(id, titulo, descripcion, materia, prioridad, fechaEntrega);
+        tarea.actualizarEstado(estado);
+        tareas.add(tarea);
+        materia.agregarTarea(tarea);
+        siguienteIdTarea = Math.max(siguienteIdTarea, id + 1);
+        return tarea;
+    }
+
+    // Mantiene los consecutivos aunque se hayan eliminado tareas antes de cerrar.
+    int siguienteIdMateria() { return siguienteIdMateria; }
+    int siguienteIdTarea() { return siguienteIdTarea; }
+
+    void restaurarConsecutivos(int siguienteMateria, int siguienteTarea) {
+        if (siguienteMateria < siguienteIdMateria || siguienteTarea < siguienteIdTarea) {
+            throw new IllegalArgumentException("Consecutivos inválidos");
+        }
+        siguienteIdMateria = siguienteMateria;
+        siguienteIdTarea = siguienteTarea;
+    }
+
     public List<Materia> consultarMaterias() {
         return new ArrayList<>(materias);
     }
