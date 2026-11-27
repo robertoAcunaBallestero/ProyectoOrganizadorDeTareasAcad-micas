@@ -2,9 +2,9 @@ package com.mycompany.proyectoorganizadortareas;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
@@ -56,10 +56,10 @@ public class ProyectoOrganizadorTareas extends JFrame {
         Organizador recuperado;
         String errorCarga = null;
         try {
-            recuperado = RepositorioDatos.cargar();
-        } catch (IOException e) {
+            recuperado = RepositorioSQLServer.cargar();
+        } catch (SQLException e) {
             recuperado = new Organizador();
-            guardadoHabilitado = false;  // Evita reemplazar un archivo dañado.
+            guardadoHabilitado = false; // Evita sobrescribir datos en caso de fallo de conexión.
             errorCarga = e.getMessage();
         }
         organizador = recuperado;
@@ -75,10 +75,10 @@ public class ProyectoOrganizadorTareas extends JFrame {
         if (errorCarga != null) {
             final String detalle = errorCarga;
             SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
-                    "No se pudieron recuperar los datos anteriores: " + detalle
+                    "No se pudieron recuperar los datos desde SQL Server: " + detalle
                     + "\nPor seguridad, el guardado automático está desactivado en esta sesión."
-                    + "\nArchivo: " + RepositorioDatos.rutaArchivo(),
-                    "Atención: datos anteriores", JOptionPane.ERROR_MESSAGE));
+                    + "\nBase de datos: OrganizadorTareasDB",
+                    "Atención: error de conexión", JOptionPane.ERROR_MESSAGE));
         } else if (organizador.consultarMaterias().isEmpty()) {
             SwingUtilities.invokeLater(this::mostrarBienvenida);
         }
@@ -315,7 +315,7 @@ public class ProyectoOrganizadorTareas extends JFrame {
                 + "1. Primero hacé clic en 'Agregar materia'.\n"
                 + "2. Después elegí 'Nueva tarea' y completá los datos.\n"
                 + "3. Para cambiar una tarea, seleccionala en la tabla.\n\n"
-                + "Las tareas se guardan automáticamente en tu computadora.\n"
+                + "Las tareas se guardan automáticamente en SQL Server.\n"
                 + "Podés volver a ver esta guía en '¿Cómo usar?'.",
                 "¡Comencemos!", JOptionPane.INFORMATION_MESSAGE);
     }
@@ -333,8 +333,7 @@ public class ProyectoOrganizadorTareas extends JFrame {
                 + "   prioridad y orden para encontrar tareas fácilmente.\n\n"
                 + "7. AVISOS: arriba de la tabla podés ver cuántas tareas están\n"
                 + "   vencidas, vencen hoy o vencen dentro de los próximos 3 días.\n\n"
-                + "8. GUARDADO: cada cambio se guarda automáticamente de forma local\n"
-                + "   en tu computadora, sin necesidad de Internet.\n\n"
+                + "8. GUARDADO: cada cambio se guarda automáticamente en SQL Server.\n\n"
                 + "Consejo: si no ves una tarea, presioná 'Limpiar filtros'.");
         ayuda.setEditable(false);
         ayuda.setFont(new Font("SansSerif", Font.PLAIN, 13));
@@ -349,17 +348,17 @@ public class ProyectoOrganizadorTareas extends JFrame {
         if (!guardadoHabilitado) {
             JOptionPane.showMessageDialog(this,
                     "El cambio se hizo en esta sesión, pero el guardado está desactivado "
-                    + "porque no se pudieron recuperar los datos anteriores.",
+                    + "porque no se pudieron recuperar los datos anteriores desde SQL Server.",
                     "Atención: cambio no guardado", JOptionPane.WARNING_MESSAGE);
             return;
         }
         try {
-            RepositorioDatos.guardar(organizador);
+            RepositorioSQLServer.guardar(organizador);
             mensaje(confirmacion);
-        } catch (IOException error) {
+        } catch (SQLException error) {
             JOptionPane.showMessageDialog(this,
-                    "El cambio se aplicó, pero NO se pudo guardar en el disco.\n"
-                    + "Revisá los permisos de la carpeta. Detalle: " + error.getMessage(),
+                    "El cambio se aplicó en esta sesión, pero NO se pudo guardar en SQL Server.\n"
+                    + "Detalle: " + error.getMessage(),
                     "Atención: cambio no guardado", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -600,19 +599,32 @@ public class ProyectoOrganizadorTareas extends JFrame {
     }
 
     private static final class ModeloTareas extends AbstractTableModel {
-        private final String[] columnas = {"ID", "Tarea", "Materia", "Prioridad", "Estado", "Entrega"};
-        private List<Tarea> datos = new ArrayList<>();
-        void actualizar(List<Tarea> nuevas) { datos = new ArrayList<>(nuevas); fireTableDataChanged(); }
-        Tarea tareaEn(int fila) { return datos.get(fila); }
-        @Override public int getRowCount() { return datos.size(); }
-        @Override public int getColumnCount() { return columnas.length; }
-        @Override public String getColumnName(int col) { return columnas[col]; }
-        @Override public Object getValueAt(int fila, int col) {
-            Tarea t = datos.get(fila);
-            return switch (col) {
-                case 0 -> t.getId(); case 1 -> t.getTitulo(); case 2 -> t.getMateria().getNombre();
-                case 3 -> t.getPrioridad().toString(); case 4 -> t.getEstado().toString();
-                default -> t.getFechaEntrega().format(FECHA_CORTA);
+        private static final String[] COLUMNAS = {"Título", "Materia", "Entrega", "Prioridad", "Estado"};
+        private List<Tarea> filas = new ArrayList<>();
+
+        void actualizar(List<Tarea> nuevasFilas) {
+            this.filas = nuevasFilas == null ? new ArrayList<>() : new ArrayList<>(nuevasFilas);
+            fireTableDataChanged();
+        }
+
+        Tarea tareaEn(int fila) {
+            if (fila < 0 || fila >= filas.size()) return null;
+            return filas.get(fila);
+        }
+
+        @Override public int getRowCount() { return filas.size(); }
+        @Override public int getColumnCount() { return COLUMNAS.length; }
+        @Override public String getColumnName(int column) { return COLUMNAS[column]; }
+
+        @Override public Object getValueAt(int rowIndex, int columnIndex) {
+            Tarea t = filas.get(rowIndex);
+            return switch (columnIndex) {
+                case 0 -> t.getTitulo();
+                case 1 -> t.getMateria().getNombre();
+                case 2 -> t.getFechaEntrega().format(FECHA_CORTA);
+                case 3 -> t.getPrioridad().toString();
+                case 4 -> t.getEstado().toString();
+                default -> "";
             };
         }
     }
